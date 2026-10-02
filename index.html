@@ -34,13 +34,13 @@ button:focus-visible{outline:3px solid #fcd34d;outline-offset:2px}
 </head>
 <body>
 <canvas id="cv"></canvas>
-<div id="bar"><span>Panah/A D: jalan &middot; Shift/X: lari &middot; Spasi/&uarr;/K: lompat (bisa di udara)</span><button id="snd" aria-pressed="true">Suara: aktif (M)</button></div>
-<div id="tc"><div><button data-k="l">&larr;</button><button data-k="r">&rarr;</button></div><div><button data-k="run">Lari</button><button data-k="j">Lompat</button></div></div>
+<div id="bar"><span>Panah/A D: jalan &middot; Shift/X: lari &middot; Spasi/&uarr;/K: lompat (bisa di udara) &middot; C/F: lempar batu</span><button id="snd" aria-pressed="true">Suara: aktif (M)</button></div>
+<div id="tc"><div><button data-k="l">&larr;</button><button data-k="r">&rarr;</button></div><div><button data-k="run">Lari</button><button data-k="th">Batu</button><button data-k="j">Lompat</button></div></div>
 
 <div id="title" class="ov"><div class="pn">
   <h1>Super Perawat Bros</h1>
   <p class="mut">Petualangan dialisis. Lari, lompat, injak kuman, dan capai tiang bendera. Ada 8 dunia dengan suasana berbeda, makin lama makin menantang.</p>
-  <p class="mut">Pukul kotak <b>?</b> dari bawah. Setiap kamu mengambil <b>jamur</b> atau <b>kotak hadiah</b>, muncul <b>3 soal</b> yang harus dijawab. Benar minimal 2 soal untuk mendapat hadiahnya: jamur membuatmu besar, kotak hadiah menambah nyawa.</p>
+  <p class="mut">Pukul kotak <b>?</b> dari bawah. Setiap kamu mengambil <b>jamur</b> atau <b>kotak hadiah</b>, muncul <b>3 soal</b> yang harus dijawab. Benar minimal 2 soal untuk mendapat hadiahnya: jamur membuatmu besar (jamur berikutnya saat sudah besar memberi kekuatan melempar batu), kotak hadiah menambah nyawa.</p>
   <p class="mut" id="ld">Memuat soal.json ...</p>
   <div id="pick" class="hide mut"><p>Soal tidak bisa dimuat otomatis (file dibuka langsung dari folder). Pilih <b>soal.json</b>:</p><input type="file" id="fi" accept=".json,application/json"></div>
   <button class="b" id="go" disabled>Mulai Main</button>
@@ -65,7 +65,7 @@ button:focus-visible{outline:3px solid #fcd34d;outline-offset:2px}
 const $=s=>$d.querySelector(s),$d=document,AIRJ=2,T=32,W=640,H=384,NC=150,FX=138*T+14;
 const cv=$('#cv'),X=cv.getContext('2d');cv.width=W;cv.height=H;X.imageSmoothingEnabled=false;
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-let DATA=[],SRT=[],used=new Set(),M,E,IT,CO,PF=[],p,g={st:'title',t:0,score:0,coins:0,lives:3,time:300,w:1,fy:0,cp:0,qn:0,right:0},k={},cam=0,Z={};
+let DATA=[],SRT=[],used=new Set(),M,E,IT,CO,PF=[],ST=[],p,g={st:'title',t:0,score:0,coins:0,lives:3,time:300,w:1,fy:0,cp:0,qn:0,right:0},k={},cam=0,Z={};
 
 /* ===== AUDIO (sintesis Web Audio, tanpa file) ===== */
 const A={c:null,m:null,on:true,bt:null,nx:0,st:0,bpm:150,
@@ -77,7 +77,7 @@ const A={c:null,m:null,on:true,bt:null,nx:0,st:0,bpm:150,
  seq(a,gap,d,ty,v){const t=this.c.currentTime;a.forEach((f,i)=>this.o(f,t+i*gap,d,ty||'square',v||.1))},
  sw(f,f2,d,ty,v){this.o(f,this.c.currentTime,d,ty||'square',v||.1,f2)},
  play(n){if(!this.c||!this.on)return;const t=this.c.currentTime,F={
-  jump:()=>this.sw(300,900,.2),coin:()=>this.seq([988,1319],.07,.25),stomp:()=>this.sw(250,60,.15,'square',.14),bump:()=>this.sw(120,70,.1,'square',.15),
+  jump:()=>this.sw(300,900,.2),coin:()=>this.seq([988,1319],.07,.25),stomp:()=>this.sw(250,60,.15,'square',.14),bump:()=>this.sw(120,70,.1,'square',.15),thr:()=>this.sw(500,200,.1,'triangle',.12),
   brk:()=>{for(let i=0;i<6;i++)this.nz(t+i*.01,.12,.25,800+i*300)},pop:()=>this.seq([392,494,587,784,988,1175,1568],.06,.1),
   pow:()=>this.seq([523,659,784,1047,1319,1568],.07,.12),up:()=>this.seq([659,784,1319,1047,1175,1568],.09,.12),shr:()=>this.sw(900,200,.5,'sawtooth',.1),
   die:()=>{this.seq([523,392,330,262,196],.16,.25,'square',.12)},good:()=>this.seq([784,1047,1319],.08,.2),bad:()=>this.sw(220,60,.45,'sawtooth',.12),
@@ -166,7 +166,7 @@ function gen(w){
   if(d>=3&&R()<.35&&!gp(c+3,2)&&!pn(c+3,1))E.push({x:(c+3)*T+2,y:10*T-28,w:28,h:28,vx:0,vy:0,d:-1,dead:0,act:0})}
  IT=[];PF=[];g.fy=3.2*T}
 function respawn(){
- build();E=E.filter(e=>e.x>g.cp);
+ build();ST=[];E=E.filter(e=>e.x>g.cp);
  p={x:g.cp||2*T,y:10*T-30,w:26,h:30,vx:0,vy:0,f:1,big:0,inv:0,ground:0};
  cam=Math.max(0,p.x-100);g.time=300-(g.w-1)*10;g.hurry=0;g.wt=g.t;g.st='play';A.bpm=150;A.start()}
 function newGame(){$d.activeElement&&$d.activeElement.blur();g.score=0;g.coins=0;g.lives=3;g.cp=0;g.qn=0;g.right=0;g.w=1;used.clear();['title','end'].forEach(i=>$('#'+i).classList.add('hide'));respawn()}
@@ -193,7 +193,7 @@ function hit(c,r){
  else if(t===4){M[r][c]=7;g.coins++;g.score+=200;PF.push({txt:'+200',x:c*T,y:r*T-8,vy:-1.2,life:40});A.play('coin')}
  else A.play('bump')}
 function die(){if(g.st!=='play')return;g.st='dying';g.dt=0;p.vy=-9;A.stop();A.play('die')}
-function hurt(){if(p.big){p.big=0;p.h=30;p.y+=28;p.inv=100;A.play('shr')}else die()}
+function hurt(){if(p.pw){p.pw=0;p.inv=100;A.play('shr')}else if(p.big){p.big=0;p.h=30;p.y+=28;p.inv=100;A.play('shr')}else die()}
 
 function play(){
  const mx=k.run?4:2.4;
@@ -224,6 +224,12 @@ function play(){
    if(p.vy>0&&p.y+p.h-e.y<20){e.dead=30;p.vy=k.j?-9:-6;g.score+=100;PF.push({txt:'+100',x:e.x,y:e.y-8,vy:-1,life:40});A.play('stomp')}
    else if(!p.inv)hurt()}}
  E=E.filter(e=>e.dead>=0&&!e.gone);
+ if(k.tb>0)k.tb--;
+ if(k.tb>0&&p.pw&&ST.length<3){ST.push({x:p.x+(p.f>0?p.w:-8),y:p.y+14,w:8,h:8,vx:p.f*6+p.vx*.3,vy:-3,b:0});k.tb=0;A.play('thr')}
+ for(const s of ST){s.vy=Math.min(11,s.vy+.5);move(s);if(s.ground){s.vy=-5.5;s.b++}if(s.wall)s.gone=1;
+  if(s.b>3||s.x<cam-40||s.x>cam+W+40||s.y>H)s.gone=1;
+  for(const e of E)if(!s.gone&&e.act&&e.dead===0&&ov(s,e)){e.dead=30;s.gone=1;g.score+=100;PF.push({txt:'+100',x:e.x,y:e.y-8,vy:-1,life:40});A.play('stomp')}}
+ ST=ST.filter(s=>!s.gone);
  for(const i of IT){
   if(i.rise>0){i.y--;i.rise--;continue}
   i.vx=i.t==='m'?i.d*1.5:0;i.vy=Math.min(11,i.vy+.6);move(i);if(i.wall)i.d*=-1;
@@ -272,7 +278,7 @@ function ans(i){
 function finishQ(){
  const pass=Z.ok>=2;let msg;Z.fin=1;
  if(pass){
-  if(Z.type==='m'){if(!p.big){p.big=1;p.h=58;p.y-=28;p.inv=60;msg='Kamu jadi besar! Sekarang bisa memecahkan bata.';A.play('pow')}else{g.score+=1000;msg='Bonus 1000 poin!';A.play('pow')}}
+  if(Z.type==='m'){if(!p.big){p.big=1;p.h=58;p.y-=28;p.inv=60;msg='Kamu jadi besar! Sekarang bisa memecahkan bata.';A.play('pow')}else if(!p.pw){p.pw=1;msg='Baju jadi oranye: kamu bisa melempar batu! Tekan C atau F (tombol Batu di HP). Kena musuh sekali, kekuatan batu hilang.';A.play('pow')}else{g.score+=1000;msg='Bonus 1000 poin!';A.play('pow')}}
   else{g.lives++;g.score+=2000;msg='Nyawa +1 dan bonus 2000 poin!';A.play('up')}}
  else msg='Hadiah hangus. Coba lagi di kotak berikutnya.';
  $('#qh').textContent='Hasil';$('#qc').textContent='';$('#qt').textContent=Z.ok+' dari 3 soal benar';
@@ -295,7 +301,7 @@ function drawPlayer(){
  const x0=Math.round(p.x-cam),y0=Math.round(p.y),h=p.h,R=(a,b,c,d,col)=>{X.fillStyle=col;X.fillRect(x0+a,y0+b,c,d)};
  R(3,0,20,8,'#fff');R(11,1,4,6,'#d62828');R(9,3,8,2,'#d62828');
  R(4,8,18,9,'#f5c9a0');R(p.f>0?15:5,10,4,4,'#222');
- R(2,17,22,h-25,'#14b8a6');
+ R(2,17,22,h-25,p.pw?'#f59e0b':'#14b8a6');
  const st=p.ground&&Math.abs(p.vx)>.3?(g.t>>3&1):0;
  R(3+st*2,h-8,9,8,'#0f766e');R(14-st*2,h-8,9,8,'#0f766e');R(2+st*2,h-3,11,3,'#222');R(13-st*2,h-3,11,3,'#222')}
 function drawEnemy(e){
@@ -329,7 +335,7 @@ function draw(){
  const px=FX-cam;X.fillStyle='#ddd';X.fillRect(px,3*T,4,7*T);X.fillStyle='#fcd34d';X.beginPath();X.arc(px+2,3*T,6,0,7);X.fill();
  X.fillStyle='#16a34a';X.beginPath();X.moveTo(px-2,g.fy);X.lineTo(px-30,g.fy+12);X.lineTo(px-2,g.fy+24);X.fill();
  CO.forEach((c,i)=>{if(c.got)return;const w=Math.abs(Math.cos(g.t/10+i))*8+3;X.fillStyle='#fcd34d';X.fillRect(c.x-cam+8-w/2,c.y,w,16);X.fillStyle='#b45309';X.fillRect(c.x-cam+8-w/4,c.y+3,w/2,10)});
- IT.forEach(drawItem);E.forEach(e=>{if(e.act||e.dead)drawEnemy(e)});
+ IT.forEach(drawItem);ST.forEach(s=>{X.fillStyle='#8b8b8b';X.beginPath();X.arc(s.x-cam+4,s.y+4,5,0,7);X.fill();X.fillStyle='#555';X.fillRect(s.x-cam+3,s.y+2,3,3)});E.forEach(e=>{if(e.act||e.dead)drawEnemy(e)});
  if(!(g.st==='flag'&&g.ft>=60&&g.ft>=140))drawPlayer();
  PF.forEach(f=>{if(f.txt){X.font='bold 12px monospace';tx(f.txt,f.x-cam,f.y)}else{X.fillStyle='#b8532a';X.fillRect(f.x-cam,f.y,8,8)}});
  wx();X.font='bold 14px monospace';
@@ -383,15 +389,15 @@ $('#shShare').onclick=async()=>{
  dl();const ok=await cp();sm('Gambar diunduh'+(ok?' dan teks disalin':'')+'. Unggah ke media sosialmu dan tempel teksnya.')};
 
 /* ===== KONTROL ===== */
-const KM={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',ArrowUp:'j',KeyW:'j',Space:'j',KeyZ:'j',ShiftLeft:'run',ShiftRight:'run',KeyX:'run',KeyK:'j',KeyJ:'j'};
+const KM={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',ArrowUp:'j',KeyW:'j',Space:'j',KeyZ:'j',ShiftLeft:'run',ShiftRight:'run',KeyX:'run',KeyK:'j',KeyJ:'j',KeyC:'th',KeyF:'th'};
 $d.addEventListener('keydown',e=>{
  if(g.st==='quiz'){const i='abcd'.indexOf(e.key.toLowerCase())>-1?'abcd'.indexOf(e.key.toLowerCase()):+e.key-1;
   if(i>=0&&i<4&&!Z.fin){const b=$d.querySelectorAll('.op')[i];b&&!b.disabled&&b.click()}return}
  if(e.code==='KeyM'){$('#snd').click();return}
- if(KM[e.code]){const n=KM[e.code];if(n==='j'&&!e.repeat)k.jb=8;k[n]=1;e.preventDefault()}});
+ if(KM[e.code]){const n=KM[e.code];if(n==='j'&&!e.repeat)k.jb=8;if(n==='th'&&!e.repeat)k.tb=8;k[n]=1;e.preventDefault()}});
 window.addEventListener('blur',()=>{k={}});
 $d.addEventListener('keyup',e=>{if(KM[e.code])k[KM[e.code]]=0});
-$d.querySelectorAll('#tc button').forEach(b=>{const f=v=>e=>{e.preventDefault();const n=b.dataset.k;if(n==='j'&&v)k.jb=8;k[n]=v};b.onpointerdown=f(1);b.onpointerup=b.onpointerleave=b.onpointercancel=f(0)});
+$d.querySelectorAll('#tc button').forEach(b=>{const f=v=>e=>{e.preventDefault();const n=b.dataset.k;if(n==='j'&&v)k.jb=8;if(n==='th'&&v)k.tb=8;k[n]=v};b.onpointerdown=f(1);b.onpointerup=b.onpointerleave=b.onpointercancel=f(0)});
 $('#snd').onclick=()=>{A.on=!A.on;$('#snd').setAttribute('aria-pressed',A.on);$('#snd').textContent='Suara: '+(A.on?'aktif':'mati')+' (M)';A.on?(g.st==='play'&&A.start()):A.stop()};
 $('#go').onclick=()=>{A.init();newGame()};$('#again').onclick=()=>{A.init();if(g.st==='won'&&g.w<8){g.w++;g.cp=0;$d.activeElement&&$d.activeElement.blur();$('#end').classList.add('hide');respawn()}else newGame()};
 </script>
